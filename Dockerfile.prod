@@ -1,0 +1,22 @@
+FROM node:18 as builder
+WORKDIR /app
+ENV NODE_ENV development
+COPY package*.json ./
+COPY yarn.lock .
+ARG NODE_ENV
+RUN  npm install
+COPY . .
+RUN yarn build 
+
+FROM node:18 as production
+WORKDIR /app
+ENV NODE_ENV production
+COPY --from=builder /app/package.json  /app
+COPY --from=builder /app/yarn.lock  /app
+RUN npm install --only=production
+COPY --from=builder /app/dist /app
+COPY --from=builder /app/config /app/config
+RUN mkdir -p /app/public/images
+
+ENV PORT 3400
+EXPOSE ${PORT}
